@@ -1,3 +1,4 @@
+
 // Java program to implement solution of producer 
 // consumer problem. 
 import java.util.LinkedList;
@@ -12,6 +13,8 @@ import java.util.Random;
 public class ServerSide {
 
 	public static int clsize, prosize, buff;
+	public static LinkedList<Integer> guesses;
+	public static String password = ""; 
 
 	public static void main(String[] args) throws Exception {
 		// Object of a class that has both produce()
@@ -34,11 +37,15 @@ public class ServerSide {
 		// int[] port_list = { 1337, 1859, 3000, 3002, 3030, 3128, 3306, 3333, 3621 };
 
 		// for (int i = 0; i < sock_list.length; i++) {
-		// 	sock_list[i] = port_list[i];
+		// sock_list[i] = port_list[i];
 		// }
 
 		System.out.print("Enter size of buffer: ");
 		buff = scanner.nextInt();
+		System.out.println();
+
+		System.out.print("Enter password: ");
+		password = scanner.nextLine();
 		System.out.println();
 
 		try (var listener = new ServerSocket(59898)) {
@@ -59,32 +66,45 @@ public class ServerSide {
 
 		@Override
 		public void run() {
+
 			System.out.println("Connected: " + socket);
+			int guess = 0; 
 
-			while (true) {
-				synchronized (this) {
+			try {
+				while (true) {
+					synchronized (this) {
 
-					try {
+						while (guesses.size() == buff) {
+							wait();
+						}
 						// receives input from client
 						var in = new Scanner(socket.getInputStream());
 						var out = new PrintWriter(socket.getOutputStream(), true);
 						while (in.hasNextLine()) {
 							// insert Server action to client here
-							out.println(in.nextLine().toUpperCase());
+							if (in.nextLine() == password) {
+								
+								out.println("ACCESS GRANTED");
+							} else {
+								guesses.add(guess++);
+								out.println("ACCESS DENIED\nTry again..(you have " + (buff - guesses.size()) + " left)");
+							}
 						}
-					} catch (Exception e) {
-						System.out.println("Error:" + socket);
-					} finally {
-						try {
-							socket.close();
-						} catch (IOException e) {
-						}
-						System.out.println("Closed: " + socket);
-
+						notify();
+						// sleep for 3 seconds
+						Thread.sleep(300);
 					}
 				}
+			} catch (Exception e) {
+				System.out.println("Error:" + socket);
+			} finally {
+				try {
+					socket.close();
+				} catch (IOException e) {
+				}
+				System.out.println("Closed: " + socket);
+
 			}
 		}
 	}
-
 }
