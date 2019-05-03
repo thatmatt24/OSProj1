@@ -2,13 +2,17 @@
 // Java program to implement solution of producer 
 // consumer problem. 
 import java.util.LinkedList;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
-import java.util.Random;
+import java.util.*;
+import java.io.*;
+import java.util.concurrent.*;
+import java.net.*;
 
 public class ServerSide {
 
@@ -34,7 +38,7 @@ public class ServerSide {
 		System.out.println();
 
 		System.out.print("Enter password: ");
-		password = scanner.nextLine();
+		password = scanner.next();
 		System.out.println();
 
 		// creates a socket using port 59898 (which is an open, general purpose port, mainly TCP use though)
@@ -76,11 +80,11 @@ public class ServerSide {
 							wait();
 						}
 						// receives input from client
-						var in = new Scanner(socket.getInputStream());
-						var out = new PrintWriter(socket.getOutputStream(), true);
-						while (in.hasNextLine()) {
+						BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+						PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+						// while (in.readLine()) {
 							// insert Server action to client here
-							if (in.nextLine() == password) {
+							if (in.readLine() == password) {
 
 								out.println("ACCESS GRANTED");
 							} else {
@@ -88,7 +92,7 @@ public class ServerSide {
 								out.println(
 										"ACCESS DENIED\nTry again..(you have " + (buff - guesses.size()) + " left)");
 							}
-						}
+						// }
 						// notifies the other threads that they can continue
 						notify();
 						// sleep for 3 seconds

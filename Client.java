@@ -1,3 +1,4 @@
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -11,14 +12,14 @@ public class Client {
             return;
         }
         try (var socket = new Socket(args[0], 59898)) {
-            System.out.println("Enter password: ");
-            var scanner = new Scanner(System.in);
-            var in = new Scanner(socket.getInputStream());
-            var out = new PrintWriter(socket.getOutputStream(), true);
-            while (scanner.hasNextLine()) {
+            System.out.print("Enter password: ");
+            Scanner scanner = new Scanner(System.in);
+            BufferedReader in = new BufferedReader (new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            // while (scanner.hasNextLine()) {
                 out.println(scanner.nextLine());
-                System.out.println(in.nextLine());
-            }
+                System.out.println(in.readLine());
+            // }
         }
     }
 }
