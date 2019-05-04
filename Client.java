@@ -15,12 +15,14 @@ public class Client {
         }
         try (var socket = new Socket(args[0], 59898)) {
             System.out.print("Enter password: ");
-            String clientinput = scanner.nextLine();
+
             var in = new Scanner(socket.getInputStream());
             var out = new PrintWriter(socket.getOutputStream(), true);
-            while (!clientinput.isBlank()) {
-                out.println(clientinput);
-                System.out.println(in.next());
+            while (scanner.hasNextLine()) {
+                
+                out.println(scanner.nextLine());
+                System.out.println(in.nextLine());
+
             }
         }
     }
