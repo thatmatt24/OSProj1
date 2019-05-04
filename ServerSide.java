@@ -21,6 +21,8 @@ public class ServerSide {
 	public static int clsize, prosize, buff;
 	public static String password;
 
+	// Receives user input for number of clients and servers as well as size of buffer
+	// 		also gets the password from the user to be verified by the client(s)
 	public static void main(String[] args) throws Exception {
 
 		// Object of a class that has both produce()
@@ -71,26 +73,30 @@ public class ServerSide {
 
 		@Override
 		public void run() {
-			System.out.println("Connected: " + socket);
 
+			System.out.println("Connected: " + socket);
+			int guess = 0; 
+			try{
 			// always while true so server will continue to run when a client accesses it;
 			// so the server can spawn threads continuously when a client is created
 			while (true) {
 				synchronized (this) {
+					try{
+						// bounded buffer; the server can only handle the "buff" size of actions
+						// ???? 
 
-					try {
 						// receives input from client
 						DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 						var out = new PrintWriter(socket.getOutputStream(), true);
 						while (!in.equals(null)) {
 
-							System.out.println("------ out.toString is: " + out.toString());
+							System.out.println("------ in.toString is: " + in.toString());
 							// insert Server action to client here
-							if (in.toString() == password) {
+							if ( in.equals(password) ) {
 								out.println("ACCESS GRANTED");
 							} else {
 								// guesses.add(guess++);
-								out.println("ACCESS DENIED.\tTry again..");
+								out.println("ACCESS DENIED. Try again..");
 							}
 							// }
 							// notifies the other threads that they can continue
@@ -109,8 +115,17 @@ public class ServerSide {
 
 					}
 				}
+				}
+			} catch (Exception e) {
+				System.out.println("Error:" + socket);
+			} finally {
+				try {
+					socket.close();
+				} catch (IOException e) {
+				}
+				System.out.println("Closed: " + socket);
+
 			}
 		}
 	}
-
 }
