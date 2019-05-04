@@ -1,19 +1,28 @@
+
 // Java program to implement solution of producer 
 // consumer problem. 
 import java.util.LinkedList;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
+
+//import jdk.internal.jline.internal.InputStreamReader;
+
 import java.util.Random;
 
 public class ServerSide {
 
 	public static int clsize, prosize, buff;
+	public static String password;
 
 	public static void main(String[] args) throws Exception {
+
 		// Object of a class that has both produce()
 		// and consume() methods
 		Scanner scanner = new Scanner(System.in);
@@ -22,29 +31,30 @@ public class ServerSide {
 		clsize = scanner.nextInt();
 		System.out.println();
 
-		System.out.print("Enter number of servers (Maximum of 9): ");
+		System.out.print("Enter number of servers: ");
 		prosize = scanner.nextInt();
 		System.out.println();
-		if (prosize > 9) {
-			System.out.println("Maximum number of servers exceeded!\nSetting number " + "of servers to 9...\n");
-			prosize = 9;
-		}
-
-		// int[] sock_list = new int[prosize];
-		// int[] port_list = { 1337, 1859, 3000, 3002, 3030, 3128, 3306, 3333, 3621 };
-
-		// for (int i = 0; i < sock_list.length; i++) {
-		// 	sock_list[i] = port_list[i];
-		// }
 
 		System.out.print("Enter size of buffer: ");
 		buff = scanner.nextInt();
 		System.out.println();
 
+		System.out.print("Enter password: ");
+		password = scanner.next();
+		System.out.println();
+
+		// creates a socket using port 59898 (which is an open, general purpose port,
+		// mainly TCP use though)
 		try (var listener = new ServerSocket(59898)) {
 			System.out.println("The server is running...");
+
+			// creates a thread pool which is the limit of the number of servers allowed,
+			// created by user "prosize"
 			var pool = Executors.newFixedThreadPool(prosize);
 			while (true) {
+
+				// calls the Server class and starts listening on port 59898
+				// essentially starts the server
 				pool.execute(new Server(listener.accept()));
 			}
 		}
@@ -53,6 +63,8 @@ public class ServerSide {
 	private static class Server implements Runnable {
 		private Socket socket;
 
+		// contructor for socket, which defines the global
+		// socket as the local one to be used here
 		Server(Socket socket) {
 			this.socket = socket;
 		}
@@ -61,16 +73,30 @@ public class ServerSide {
 		public void run() {
 			System.out.println("Connected: " + socket);
 
+			// always while true so server will continue to run when a client accesses it;
+			// so the server can spawn threads continuously when a client is created
 			while (true) {
 				synchronized (this) {
 
 					try {
 						// receives input from client
-						var in = new Scanner(socket.getInputStream());
+						DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 						var out = new PrintWriter(socket.getOutputStream(), true);
-						while (in.hasNextLine()) {
+						while (!in.equals(null)) {
+
+							System.out.println("------ out.toString is: " + out.toString());
 							// insert Server action to client here
-							out.println(in.nextLine().toUpperCase());
+							if (in.toString() == password) {
+								out.println("ACCESS GRANTED");
+							} else {
+								// guesses.add(guess++);
+								out.println("ACCESS DENIED.\tTry again..");
+							}
+							// }
+							// notifies the other threads that they can continue
+							notify();
+							// sleep for 5 seconds
+							Thread.sleep(500);
 						}
 					} catch (Exception e) {
 						System.out.println("Error:" + socket);

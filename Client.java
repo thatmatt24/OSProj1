@@ -11,7 +11,7 @@ public class Client {
             return;
         }
         try (var socket = new Socket(args[0], 59898)) {
-            System.out.println("Enter password: ");
+            System.out.print("Enter password: ");
             var scanner = new Scanner(System.in);
             var in = new Scanner(socket.getInputStream());
             var out = new PrintWriter(socket.getOutputStream(), true);
