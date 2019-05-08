@@ -1,19 +1,40 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-import java.net.ServerSocket;
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.PrintWriter;
 
+public class Verify extends RuntimeException implements Runnable {
+    private Socket socket; 
 
+    // Establish threads for producing and consuming
+    // producer thread
+    Thread t1 = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                produce(KeyList.getKey());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    });
 
-public static class Verify implements Runnable {
-    private Socket socket;
+    // consumer thread
+    Thread t2 = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                consume(KeyList.getKey());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    });
 
-    Verify(Serve socket) {
+    Verify(Socket socket) {
         this.socket = socket;
     }
-
 
     @Override
     public void run() {
@@ -22,40 +43,11 @@ public static class Verify implements Runnable {
 
         System.out.println("Connected: " + socket);
 
-        // Establish threads for producing and consuming
-        // producer thread
-        Thread t1 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    produce(Globals.key);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        // consumer thread
-        Thread t2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    consume(Globals.key);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
         while (true) {
             synchronized (this) {
-                // producer thread waits while list
-                // is full
-                while (Globals.list.size() == Globals.buff)
-                    wait();
 
                 try {
-                    Socket socket = serverSocket.accept();
+                    
                     var in = new Scanner(socket.getInputStream());
                     PrintWriter printWriter = new PrintWriter(socket.getOutputStream(), true);
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -66,10 +58,9 @@ public static class Verify implements Runnable {
                         printWriter.println("Enter password: ");
                         input = bufferedReader.readLine();
 
-                        if (input.equals(Globals.password)) {
+                        if (input.equals(KeyList.getPassword())) {
 
-                            printWriter.println("Access Granted");
-                            printWriter.println("Key: " + Globals.key);
+                            printWriter.println("Access Granted. Your Key is: " + KeyList.getKey());
                             t1.start();
 
                             t1.join();
@@ -83,7 +74,7 @@ public static class Verify implements Runnable {
 
                     if (input.equals("done")) {
 
-                        System.out.println(key + "key returned.");
+                        System.out.println(KeyList.getKey() + "key returned.");
 
                         t2.start();
 
@@ -91,7 +82,7 @@ public static class Verify implements Runnable {
                     }
 
                     printWriter.close();
-                    serverSocket.close();
+                    // serverSocket.close();
 
                 } catch (Exception e) {
 
@@ -100,7 +91,7 @@ public static class Verify implements Runnable {
 
                 } finally {
 
-                    socket.close();
+                    // socket.close();
                     System.out.println("Closed: " + socket);
 
                 }
@@ -116,24 +107,29 @@ public static class Verify implements Runnable {
         while (true) {
 
             synchronized (this) {
+                try {
+                    while (KeyList.list.size() == KeyList.getBuffer()) {
+                        wait();
+                    }
+                    // to insert the jobs in the list
+                    // fixme: may have to pass in which key is being
+                    KeyList.getKey();
 
-                while (Globals.list.size() == Globals.buff) {
-                    wait();
+                    // notifies the consumer thread that
+                    // now it can start consuming
+                    notify();
+
+                    // makes the working of program easier
+                    // to understand
+                    Thread.sleep(1000);
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+
                 }
-                // to insert the jobs in the list
-                // fixme: may have to pass in which key is being
-                Globals.list.add(key);
-
-                // notifies the consumer thread that
-                // now it can start consuming
-                notify();
-
-                // makes the working of program easier
-                // to understand
-                Thread.sleep(1000);
-
             }
         }
+
     }
 
     public String consume(String key) throws InterruptedException {
@@ -141,26 +137,29 @@ public static class Verify implements Runnable {
         while (true) {
 
             synchronized (this) {
+                try {
+                    while (KeyList.list.size() == KeyList.getBuffer()) {
+                        wait();
+                    }
+                    // to insert the jobs in the list
+                    // fixme: may have to pass in which key is being
+                    KeyList.removeKey();
 
-                while (Globals.list.size() == Globals.buff) {
-                    wait();
+                    // notifies the consumer thread that
+                    // now it can start consuming
+                    notify();
+
+                    // makes the working of program easier
+                    // to understand
+                    Thread.sleep(1000);
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+
                 }
-                // to insert the jobs in the list
-                // fixme: may have to pass in which key is being
-                Globals.list.remove(key);
-
-                // notifies the consumer thread that
-                // now it can start consuming
-                notify();
-
-                // makes the working of program easier
-                // to understand
-                Thread.sleep(1000);
 
             }
         }
+
     }
-
 }
-
-

@@ -13,8 +13,8 @@ public class Client {
             System.err.println("Pass the server IP as the sole command line argument");
             return;
         }
-        try (var socket = new Socket(args[0], 59898)) {
-            System.out.print("Enter password: ");
+        try (var socket = new Socket(args[0], 3030)) {
+            System.out.print("Hit Enter.");
 
             var in = new Scanner(socket.getInputStream());
             var out = new PrintWriter(socket.getOutputStream(), true);
